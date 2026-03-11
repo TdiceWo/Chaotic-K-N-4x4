@@ -1,0 +1,1282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хаотичные крестики-нолики 4х4</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .tagline {
+            font-size: 1.2rem;
+            color: #a0a0c0;
+            margin-bottom: 20px;
+        }
+        
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+        
+        .game-section {
+            flex: 2;
+            min-width: 300px;
+        }
+        
+        .info-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .game-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .current-player {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .current-player.active-turn {
+            background: rgba(78, 205, 196, 0.2);
+            border: 2px solid #4ecdc4;
+            box-shadow: 0 0 15px rgba(78, 205, 196, 0.4);
+            transform: translateY(-3px);
+        }
+        
+        .current-player.player-a.active-turn {
+            background: rgba(78, 205, 196, 0.2);
+            border: 2px solid #4ecdc4;
+            box-shadow: 0 0 15px rgba(78, 205, 196, 0.4);
+        }
+        
+        .current-player.player-b.active-turn {
+            background: rgba(255, 126, 95, 0.2);
+            border: 2px solid #ff7e5f;
+            box-shadow: 0 0 15px rgba(255, 126, 95, 0.4);
+        }
+        
+        .turn-indicator {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            width: 25px;
+            height: 25px;
+            background: #4ecdc4;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.8);
+            animation: pulse-turn 1.5s infinite;
+        }
+        
+        .turn-indicator.player-b {
+            background: #ff7e5f;
+            box-shadow: 0 0 10px rgba(255, 126, 95, 0.8);
+        }
+        
+        @keyframes pulse-turn {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .player-icon {
+            font-size: 1.8rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        
+        .player-a .player-icon {
+            color: #4ecdc4;
+            border: 2px solid #4ecdc4;
+        }
+        
+        .player-b .player-icon {
+            color: #ff7e5f;
+            border: 2px solid #ff7e5f;
+        }
+        
+        .player-info h3 {
+            font-size: 1.3rem;
+            margin-bottom: 5px;
+        }
+        
+        .player-probability {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        
+        .prob-a {
+            color: #4ecdc4;
+        }
+        
+        .prob-b {
+            color: #ff7e5f;
+        }
+        
+        .turn-message {
+            text-align: center;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #4ecdc4;
+            font-size: 1.2rem;
+            font-weight: bold;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .turn-message.player-b-turn {
+            border-left-color: #ff7e5f;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 25px;
+            position: relative;
+        }
+        
+        .cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cell:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .cell.x {
+            color: #4ecdc4;
+            border-color: #4ecdc4;
+        }
+        
+        .cell.o {
+            color: #ff7e5f;
+            border-color: #ff7e5f;
+        }
+        
+        .cell.winner {
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Эффекты для успешного и неудачного ходов */
+        .success-glow {
+            animation: success-glow 1s ease-out;
+        }
+        
+        @keyframes success-glow {
+            0% {
+                box-shadow: 0 0 5px #4ecdc4;
+                border-color: #4ecdc4;
+            }
+            50% {
+                box-shadow: 0 0 25px #4ecdc4, 0 0 40px #4ecdc4;
+                border-color: #4ecdc4;
+                transform: scale(1.05);
+            }
+            100% {
+                box-shadow: 0 0 5px #4ecdc4;
+                border-color: #4ecdc4;
+                transform: scale(1);
+            }
+        }
+        
+        .fail-glow {
+            animation: fail-glow 1s ease-out;
+        }
+        
+        @keyframes fail-glow {
+            0% {
+                box-shadow: 0 0 5px #ff4757;
+                border-color: #ff4757;
+            }
+            50% {
+                box-shadow: 0 0 25px #ff4757, 0 0 40px #ff4757;
+                border-color: #ff4757;
+                transform: scale(1.05);
+            }
+            100% {
+                box-shadow: 0 0 5px #ff4757;
+                border-color: #ff4757;
+                transform: scale(1);
+            }
+        }
+        
+        /* Эффекты для индикаторов игроков */
+        .player-success-glow {
+            animation: player-success-glow 1s ease-out;
+        }
+        
+        @keyframes player-success-glow {
+            0% {
+                box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(78, 205, 196, 0.8), 0 0 50px rgba(78, 205, 196, 0.6);
+            }
+            100% {
+                box-shadow: 0 0 10px rgba(78, 205, 196, 0.5);
+            }
+        }
+        
+        .player-fail-glow {
+            animation: player-fail-glow 1s ease-out;
+        }
+        
+        @keyframes player-fail-glow {
+            0% {
+                box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(255, 71, 87, 0.8), 0 0 50px rgba(255, 71, 87, 0.6);
+            }
+            100% {
+                box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+            }
+        }
+        
+        /* Анимация для вероятности */
+        .probability-update {
+            animation: probability-update 0.5s ease-out;
+        }
+        
+        @keyframes probability-update {
+            0% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+        
+        /* Эффект для всего поля при неудаче */
+        .board-shake {
+            animation: board-shake 0.5s ease-out;
+        }
+        
+        @keyframes board-shake {
+            0%, 100% {
+                transform: translateX(0);
+            }
+            10%, 30%, 50%, 70%, 90% {
+                transform: translateX(-3px);
+            }
+            20%, 40%, 60%, 80% {
+                transform: translateX(3px);
+            }
+        }
+        
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(78, 205, 196, 0.4);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
+        }
+        
+        .rules-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 25px;
+        }
+        
+        .rules-box h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #feb47b;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .rules-list {
+            list-style-type: none;
+        }
+        
+        .rules-list li {
+            margin-bottom: 15px;
+            padding-left: 10px;
+            border-left: 3px solid #4ecdc4;
+            padding-left: 15px;
+        }
+        
+        .highlight {
+            color: #feb47b;
+            font-weight: bold;
+        }
+        
+        .stats-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stats-box h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #4ecdc4;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #a0a0c0;
+        }
+        
+        .stats-controls {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        
+        .probability-display {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .prob-item {
+            text-align: center;
+        }
+        
+        .prob-bar {
+            width: 100%;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+            position: relative;
+        }
+        
+        .prob-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .prob-fill-a {
+            background: linear-gradient(90deg, #4ecdc4, #44a08d);
+        }
+        
+        .prob-fill-b {
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
+        }
+        
+        .prob-percent {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .result-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            z-index: 1000;
+            border: 3px solid #4ecdc4;
+            box-shadow: 0 0 50px rgba(78, 205, 196, 0.5);
+            transition: transform 0.5s ease;
+            max-width: 500px;
+            width: 90%;
+        }
+        
+        .result-message.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .result-title {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: #feb47b;
+        }
+        
+        .result-winner {
+            font-size: 4rem;
+            margin: 20px 0;
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 999;
+            display: none;
+        }
+        
+        .overlay.show {
+            display: block;
+        }
+        
+        .confirmation-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 1001;
+            border: 3px solid #ff7e5f;
+            box-shadow: 0 0 30px rgba(255, 126, 95, 0.5);
+            transition: transform 0.3s ease;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .confirmation-modal.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .confirmation-modal h3 {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: #feb47b;
+        }
+        
+        .confirmation-modal p {
+            margin-bottom: 25px;
+            color: #a0a0c0;
+        }
+        
+        .confirmation-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        
+        footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 20px;
+            color: #a0a0c0;
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .game-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .current-player {
+                justify-content: center;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .game-controls {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .confirmation-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-dice"></i> Хаотичные крестики-нолики 4х4</h1>
+            <p class="tagline">Классическая игра, где непредсказуемость постоянна!</p>
+        </header>
+        
+        <div class="main-content">
+            <section class="game-section">
+                <div class="game-container">
+                    <div class="game-header">
+                        <div class="current-player player-a" id="player-a-indicator">
+                            <div class="turn-indicator player-a-turn" id="turn-indicator-a">ХОД</div>
+                            <div class="player-icon">X</div>
+                            <div class="player-info">
+                                <h3>Игрок A (Крестики)</h3>
+                                <div class="player-probability">Вероятность: <span class="prob-a" id="prob-a-value">100%</span></div>
+                            </div>
+                        </div>
+                        
+                        <div class="current-player player-b" id="player-b-indicator">
+                            <div class="turn-indicator player-b-turn" id="turn-indicator-b">ХОД</div>
+                            <div class="player-icon">O</div>
+                            <div class="player-info">
+                                <h3>Игрок B (Нолики)</h3>
+                                <div class="player-probability">Вероятность: <span class="prob-b" id="prob-b-value">100%</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="turn-message" id="turn-message">
+                        <i class="fas fa-arrow-right"></i> Сейчас ходит: <span id="current-player-name">Игрок A</span>
+                    </div>
+                    
+                    <div class="probability-display">
+                        <div class="prob-item">
+                            <div>Игрок A</div>
+                            <div class="prob-bar">
+                                <div class="prob-fill prob-fill-a" id="prob-a-bar" style="width: 100%"></div>
+                            </div>
+                            <div class="prob-percent prob-a" id="prob-a-percent">100%</div>
+                        </div>
+                        
+                        <div class="prob-item">
+                            <div>Игрок B</div>
+                            <div class="prob-bar">
+                                <div class="prob-fill prob-fill-b" id="prob-b-bar" style="width: 100%"></div>
+                            </div>
+                            <div class="prob-percent prob-b" id="prob-b-percent">100%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="game-board" id="game-board">
+                        <!-- Ячейки поля будут сгенерированы скриптом -->
+                    </div>
+                    
+                    <div class="game-controls">
+                        <button class="btn btn-primary" id="restart-btn">
+                            <i class="fas fa-redo"></i> Новая игра
+                        </button>
+                        <button class="btn btn-secondary" id="rules-btn">
+                            <i class="fas fa-book"></i> Правила
+                        </button>
+                        <button class="btn btn-secondary" id="stats-btn">
+                            <i class="fas fa-chart-bar"></i> Статистика
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="info-section">
+                <div class="rules-box">
+                    <h2><i class="fas fa-scroll"></i> Правила игры</h2>
+                    <ul class="rules-list">
+                        <li>Игра ведется на поле <span class="highlight">4×4</span>. Для победы нужно собрать <span class="highlight">3 знака в ряд</span> (по горизонтали, вертикали или диагонали).</li>
+                        <li>Игроки ходят по очереди: <span class="highlight">A (крестики)</span> и <span class="highlight">B (нолики)</span>.</li>
+                        <li>Сначала выбираете клетку, затем определяется, какой знак на ней появится.</li>
+                        <li>Вероятность поставить свой знак уменьшается после каждого успешного хода: <span class="highlight">100% → 75% → 50% → 25%</span>.</li>
+                        <li>Если вы поставили <span class="highlight">не свой знак</span> (неудача), вероятность следующего хода <span class="highlight">восстанавливается до 100%</span>, и ход остается у вас!</li>
+                        <li>Игра продолжается до победы одного из игроков или ничьей.</li>
+                    </ul>
+                </div>
+                
+                <div class="stats-box">
+                    <h2><i class="fas fa-trophy"></i> Статистика</h2>
+                    <div class="stats-grid">
+                        <div class="stat-item">
+                            <div class="stat-value" id="wins-a">0</div>
+                            <div class="stat-label">Побед Игрока A</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="wins-b">0</div>
+                            <div class="stat-label">Побед Игрока B</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="total-games">0</div>
+                            <div class="stat-label">Всего игр</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="total-draws">0</div>
+                            <div class="stat-label">Ничьих</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-controls">
+                        <button class="btn btn-danger" id="clear-stats-btn">
+                            <i class="fas fa-trash-alt"></i> Очистить статистику
+                        </button>
+                    </div>
+                </div>
+            </section>
+        </div>
+        
+        <footer>
+            <p>Хаотичные крестики-нолики 4х4 | Создано с использованием HTML, CSS и JavaScript</p>
+        </footer>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    
+    <div class="result-message" id="result-message">
+        <h2 class="result-title" id="result-title">Победа!</h2>
+        <div class="result-winner" id="result-winner">X</div>
+        <p id="result-text">Игрок A победил в этой партии!</p>
+        <button class="btn btn-primary" id="close-result-btn">
+            <i class="fas fa-play"></i> Новая игра
+        </button>
+    </div>
+    
+    <div class="confirmation-modal" id="confirmation-modal">
+        <h3><i class="fas fa-exclamation-triangle"></i> Очистить статистику?</h3>
+        <p>Вы уверены, что хотите удалить всю статистику игр? Это действие нельзя отменить.</p>
+        <div class="confirmation-buttons">
+            <button class="btn btn-danger" id="confirm-clear-btn">
+                <i class="fas fa-check"></i> Да, очистить
+            </button>
+            <button class="btn btn-secondary" id="cancel-clear-btn">
+                <i class="fas fa-times"></i> Отмена
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Игровое состояние
+        const gameState = {
+            board: Array(16).fill(''),
+            currentPlayer: 'A',
+            playerProbabilities: { A: 100, B: 100 },
+            gameActive: true,
+            playerSuccessCount: { A: 0, B: 0 },
+            stats: {
+                winsA: 0,
+                winsB: 0,
+                draws: 0,
+                totalGames: 0
+            }
+        };
+
+        // DOM элементы
+        const gameBoard = document.getElementById('game-board');
+        const probAValue = document.getElementById('prob-a-value');
+        const probBValue = document.getElementById('prob-b-value');
+        const probABar = document.getElementById('prob-a-bar');
+        const probBBar = document.getElementById('prob-b-bar');
+        const probAPercent = document.getElementById('prob-a-percent');
+        const probBPercent = document.getElementById('prob-b-percent');
+        const resultMessage = document.getElementById('result-message');
+        const overlay = document.getElementById('overlay');
+        const resultTitle = document.getElementById('result-title');
+        const resultWinner = document.getElementById('result-winner');
+        const resultText = document.getElementById('result-text');
+        
+        // Элементы для отображения хода
+        const playerAIndicator = document.getElementById('player-a-indicator');
+        const playerBIndicator = document.getElementById('player-b-indicator');
+        const turnIndicatorA = document.getElementById('turn-indicator-a');
+        const turnIndicatorB = document.getElementById('turn-indicator-b');
+        const turnMessage = document.getElementById('turn-message');
+        const currentPlayerName = document.getElementById('current-player-name');
+        
+        // Статистика
+        const winsAElement = document.getElementById('wins-a');
+        const winsBElement = document.getElementById('wins-b');
+        const totalGamesElement = document.getElementById('total-games');
+        const totalDrawsElement = document.getElementById('total-draws');
+        
+        // Кнопки и модальные окна
+        const restartBtn = document.getElementById('restart-btn');
+        const closeResultBtn = document.getElementById('close-result-btn');
+        const clearStatsBtn = document.getElementById('clear-stats-btn');
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmClearBtn = document.getElementById('confirm-clear-btn');
+        const cancelClearBtn = document.getElementById('cancel-clear-btn');
+
+        // Инициализация игры
+        function initGame() {
+            createBoard();
+            updateUI();
+            loadStats();
+            attachEventListeners();
+            updateTurnDisplay();
+        }
+
+        // Создание игрового поля
+        function createBoard() {
+            gameBoard.innerHTML = '';
+            
+            for (let i = 0; i < 16; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                cell.addEventListener('click', () => cellClick(i));
+                gameBoard.appendChild(cell);
+            }
+        }
+
+        // Обработка клика по ячейке
+        function cellClick(index) {
+            if (!gameState.gameActive || gameState.board[index] !== '') return;
+            
+            const player = gameState.currentPlayer;
+            const playerSymbol = player === 'A' ? 'X' : 'O';
+            const probability = gameState.playerProbabilities[player];
+            
+            // Определяем, какой знак будет поставлен
+            const placedOwnSymbol = Math.random() * 100 <= probability;
+            const symbolToPlace = placedOwnSymbol ? playerSymbol : (player === 'A' ? 'O' : 'X');
+            
+            // Получаем элемент ячейки
+            const cell = document.querySelector(`.cell[data-index="${index}"]`);
+            
+            // Обновляем состояние игры
+            gameState.board[index] = symbolToPlace;
+            
+            // Добавляем анимацию эффекта
+            if (placedOwnSymbol) {
+                // Успешный ход - синее свечение
+                cell.classList.add('success-glow');
+                // Анимация для индикатора игрока
+                if (player === 'A') {
+                    playerAIndicator.classList.add('player-success-glow');
+                } else {
+                    playerBIndicator.classList.add('player-success-glow');
+                }
+                
+                // Обновляем вероятность для игрока
+                if (gameState.playerProbabilities[player] === 100) {
+                    gameState.playerProbabilities[player] = 75;
+                } else if (gameState.playerProbabilities[player] === 75) {
+                    gameState.playerProbabilities[player] = 50;
+                } else if (gameState.playerProbabilities[player] === 50) {
+                    gameState.playerProbabilities[player] = 25;
+                }
+                // Если уже 25%, остается 25%
+                
+                gameState.playerSuccessCount[player]++;
+                
+                // Ход переходит другому игроку
+                gameState.currentPlayer = player === 'A' ? 'B' : 'A';
+                
+                // Показываем уведомление об успехе
+                showNotification(`Удача! Игрок ${player} поставил свой знак!`, 'success');
+            } else {
+                // Неудача - красное свечение
+                cell.classList.add('fail-glow');
+                // Анимация для индикатора игрока
+                if (player === 'A') {
+                    playerAIndicator.classList.add('player-fail-glow');
+                } else {
+                    playerBIndicator.classList.add('player-fail-glow');
+                }
+                // Легкое сотрясение игрового поля
+                gameBoard.classList.add('board-shake');
+                
+                // Неудача - восстанавливаем вероятность до 100%
+                gameState.playerProbabilities[player] = 100;
+                // Ход остается у того же игрока
+                
+                // Показываем уведомление о неудаче
+                showNotification(`Неудача! Игрок ${player} поставил чужой знак!`, 'fail');
+            }
+            
+            // Удаляем классы анимаций после их завершения
+            setTimeout(() => {
+                cell.classList.remove('success-glow', 'fail-glow');
+                playerAIndicator.classList.remove('player-success-glow', 'player-fail-glow');
+                playerBIndicator.classList.remove('player-success-glow', 'player-fail-glow');
+                gameBoard.classList.remove('board-shake');
+            }, 1000);
+            
+            // Обновляем интерфейс
+            updateUI();
+            updateTurnDisplay();
+            
+            // Проверяем победителя
+            checkWinner();
+        }
+
+        // Обновление отображения текущего хода
+        function updateTurnDisplay() {
+            // Обновляем индикаторы игроков
+            if (gameState.currentPlayer === 'A') {
+                playerAIndicator.classList.add('active-turn');
+                playerBIndicator.classList.remove('active-turn');
+                turnIndicatorA.style.display = 'flex';
+                turnIndicatorB.style.display = 'none';
+                
+                turnMessage.classList.remove('player-b-turn');
+                turnMessage.innerHTML = '<i class="fas fa-arrow-right"></i> Сейчас ходит: <span id="current-player-name">Игрок A (Крестики)</span>';
+                currentPlayerName.style.color = '#4ecdc4';
+            } else {
+                playerAIndicator.classList.remove('active-turn');
+                playerBIndicator.classList.add('active-turn');
+                turnIndicatorA.style.display = 'none';
+                turnIndicatorB.style.display = 'flex';
+                
+                turnMessage.classList.add('player-b-turn');
+                turnMessage.innerHTML = '<i class="fas fa-arrow-right"></i> Сейчас ходит: <span id="current-player-name">Игрок B (Нолики)</span>';
+                currentPlayerName.style.color = '#ff7e5f';
+            }
+            
+            // Добавляем анимацию для сообщения о ходе
+            turnMessage.style.animation = 'none';
+            setTimeout(() => {
+                turnMessage.style.animation = 'fadeIn 0.5s ease';
+            }, 10);
+        }
+
+        // Проверка победителя
+        function checkWinner() {
+            const winningLines = [
+                // Горизонтальные линии
+                [0, 1, 2], [1, 2, 3], [4, 5, 6], [5, 6, 7],
+                [8, 9, 10], [9, 10, 11], [12, 13, 14], [13, 14, 15],
+                // Вертикальные линии
+                [0, 4, 8], [4, 8, 12], [1, 5, 9], [5, 9, 13],
+                [2, 6, 10], [6, 10, 14], [3, 7, 11], [7, 11, 15],
+                // Диагонали
+                [0, 5, 10], [1, 6, 11], [4, 9, 14], [5, 10, 15],
+                [2, 5, 8], [3, 6, 9], [6, 9, 12], [7, 10, 13]
+            ];
+            
+            let winner = null;
+            
+            // Проверяем все выигрышные линии
+            for (const line of winningLines) {
+                const [a, b, c] = line;
+                if (gameState.board[a] && 
+                    gameState.board[a] === gameState.board[b] && 
+                    gameState.board[a] === gameState.board[c]) {
+                    
+                    winner = gameState.board[a];
+                    
+                    // Подсвечиваем выигрышную линию
+                    line.forEach(index => {
+                        const cell = document.querySelector(`.cell[data-index="${index}"]`);
+                        cell.classList.add('winner');
+                    });
+                    
+                    break;
+                }
+            }
+            
+            // Проверяем ничью
+            if (!winner && !gameState.board.includes('')) {
+                winner = 'draw';
+            }
+            
+            // Если есть победитель или ничья
+            if (winner) {
+                gameState.gameActive = false;
+                showResult(winner);
+                updateStats(winner);
+            }
+        }
+
+        // Показать результат игры
+        function showResult(winner) {
+            if (winner === 'X') {
+                resultTitle.textContent = 'Победа!';
+                resultWinner.textContent = 'X';
+                resultWinner.style.color = '#4ecdc4';
+                resultText.textContent = 'Игрок A победил в этой партии!';
+            } else if (winner === 'O') {
+                resultTitle.textContent = 'Победа!';
+                resultWinner.textContent = 'O';
+                resultWinner.style.color = '#ff7e5f';
+                resultText.textContent = 'Игрок B победил в этой партии!';
+            } else {
+                resultTitle.textContent = 'Ничья!';
+                resultWinner.textContent = '=?';
+                resultWinner.style.color = '#feb47b';
+                resultText.textContent = 'Все клетки заполнены, но никто не собрал 3 в ряд!';
+            }
+            
+            overlay.classList.add('show');
+            resultMessage.classList.add('show');
+        }
+
+        // Обновление статистики
+        function updateStats(winner) {
+            gameState.stats.totalGames++;
+            
+            if (winner === 'X') {
+                gameState.stats.winsA++;
+            } else if (winner === 'O') {
+                gameState.stats.winsB++;
+            } else {
+                gameState.stats.draws++;
+            }
+            
+            saveStats();
+            updateStatsDisplay();
+        }
+
+        // Сохранение статистики
+        function saveStats() {
+            localStorage.setItem('chaoticTicTacToeStats', JSON.stringify(gameState.stats));
+        }
+
+        // Загрузка статистики
+        function loadStats() {
+            const savedStats = localStorage.getItem('chaoticTicTacToeStats');
+            if (savedStats) {
+                gameState.stats = JSON.parse(savedStats);
+                updateStatsDisplay();
+            }
+        }
+
+        // Очистка статистики
+        function clearStats() {
+            gameState.stats = {
+                winsA: 0,
+                winsB: 0,
+                draws: 0,
+                totalGames: 0
+            };
+            
+            saveStats();
+            updateStatsDisplay();
+            
+            // Скрываем модальное окно подтверждения
+            confirmationModal.classList.remove('show');
+            overlay.classList.remove('show');
+            
+            // Показываем уведомление об успешной очистке
+            showNotification('Статистика успешно очищена!', 'success');
+        }
+
+        // Показать уведомление
+        function showNotification(message, type) {
+            // Создаем элемент уведомления
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 25px;
+                background: ${type === 'success' ? 'rgba(78, 205, 196, 0.9)' : type === 'fail' ? 'rgba(255, 71, 87, 0.9)' : 'rgba(255, 126, 95, 0.9)'};
+                color: white;
+                border-radius: 8px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                z-index: 1002;
+                animation: slideIn 0.3s ease;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Удаляем уведомление через 3 секунды
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Обновление отображения статистики
+        function updateStatsDisplay() {
+            winsAElement.textContent = gameState.stats.winsA;
+            winsBElement.textContent = gameState.stats.winsB;
+            totalGamesElement.textContent = gameState.stats.totalGames;
+            totalDrawsElement.textContent = gameState.stats.draws;
+        }
+
+        // Обновление интерфейса
+        function updateUI() {
+            // Обновляем доску
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach((cell, index) => {
+                cell.textContent = gameState.board[index];
+                cell.className = 'cell';
+                if (gameState.board[index] === 'X') {
+                    cell.classList.add('x');
+                } else if (gameState.board[index] === 'O') {
+                    cell.classList.add('o');
+                }
+            });
+            
+            // Обновляем вероятности с анимацией
+            const oldProbA = parseInt(probAValue.textContent);
+            const oldProbB = parseInt(probBValue.textContent);
+            
+            probAValue.textContent = `${gameState.playerProbabilities.A}%`;
+            probBValue.textContent = `${gameState.playerProbabilities.B}%`;
+            
+            probABar.style.width = `${gameState.playerProbabilities.A}%`;
+            probBBar.style.width = `${gameState.playerProbabilities.B}%`;
+            
+            probAPercent.textContent = `${gameState.playerProbabilities.A}%`;
+            probBPercent.textContent = `${gameState.playerProbabilities.B}%`;
+            
+            // Добавляем анимацию изменения вероятности
+            if (oldProbA !== gameState.playerProbabilities.A) {
+                probAValue.classList.add('probability-update');
+                probAPercent.classList.add('probability-update');
+                setTimeout(() => {
+                    probAValue.classList.remove('probability-update');
+                    probAPercent.classList.remove('probability-update');
+                }, 500);
+            }
+            
+            if (oldProbB !== gameState.playerProbabilities.B) {
+                probBValue.classList.add('probability-update');
+                probBPercent.classList.add('probability-update');
+                setTimeout(() => {
+                    probBValue.classList.remove('probability-update');
+                    probBPercent.classList.remove('probability-update');
+                }, 500);
+            }
+        }
+
+        // Начать новую игру
+        function newGame() {
+            gameState.board = Array(16).fill('');
+            gameState.currentPlayer = 'A';
+            gameState.playerProbabilities = { A: 100, B: 100 };
+            gameState.gameActive = true;
+            gameState.playerSuccessCount = { A: 0, B: 0 };
+            
+            updateUI();
+            updateTurnDisplay();
+            overlay.classList.remove('show');
+            resultMessage.classList.remove('show');
+        }
+
+        // Показать модальное окно подтверждения очистки статистики
+        function showClearStatsConfirmation() {
+            overlay.classList.add('show');
+            confirmationModal.classList.add('show');
+        }
+
+        // Привязка обработчиков событий
+        function attachEventListeners() {
+            restartBtn.addEventListener('click', newGame);
+            closeResultBtn.addEventListener('click', newGame);
+            
+            // Кнопка очистки статистики
+            clearStatsBtn.addEventListener('click', showClearStatsConfirmation);
+            
+            // Кнопки подтверждения очистки
+            confirmClearBtn.addEventListener('click', clearStats);
+            cancelClearBtn.addEventListener('click', () => {
+                confirmationModal.classList.remove('show');
+                overlay.classList.remove('show');
+            });
+            
+            // Кнопка правил
+            document.getElementById('rules-btn').addEventListener('click', () => {
+                alert("Правила игры:\n\n1. Игра на поле 4×4. Для победы нужно собрать 3 знака в ряд.\n2. Игроки ходят по очереди: A (крестики) и B (нолики).\n3. Сначала выбираете клетку, затем определяется, какой знак на ней появится.\n4. Вероятность поставить свой знак: 100% → 75% → 50% → 25%.\n5. Если поставили не свой знак, вероятность восстанавливается до 100%, и ход остается у вас!\n6. Игра продолжается до победы или ничьей.\n\nЭффекты:\n- Синее свечение: удачный ход (поставлен свой знак)\n- Красное свечение: неудачный ход (поставлен чужой знак)");
+            });
+            
+            // Кнопка статистики
+            document.getElementById('stats-btn').addEventListener('click', () => {
+                alert(`Статистика игр:\n\nПобед Игрока A: ${gameState.stats.winsA}\nПобед Игрока B: ${gameState.stats.winsB}\nНичьих: ${gameState.stats.draws}\nВсего игр: ${gameState.stats.totalGames}\n\nВы можете очистить статистику с помощью кнопки ниже.`);
+            });
+            
+            // Клик по оверлею закрывает модальные окна
+            overlay.addEventListener('click', () => {
+                overlay.classList.remove('show');
+                resultMessage.classList.remove('show');
+                confirmationModal.classList.remove('show');
+            });
+        }
+
+        // Добавляем стили для анимации уведомлений
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Запуск игры при загрузке страницы
+        window.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
