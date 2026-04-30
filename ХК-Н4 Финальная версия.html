@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Хаотичные крестики-нолики 4х4</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 5px;
+            background: linear-gradient(90deg, #ff7e5f, #feb47b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .tagline {
+            font-size: 1.2rem;
+            color: #a0a0c0;
+        }
+
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        .game-section {
+            flex: 2;
+            min-width: 350px;
+        }
+
+        .info-section {
+            flex: 1.2;
+            min-width: 320px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .game-container {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .current-player {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .current-player.active-turn {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        .player-x.active-turn { border-color: #4ecdc4; box-shadow: 0 0 20px rgba(78, 205, 196, 0.5); background: rgba(78, 205, 196, 0.15); }
+        .player-o.active-turn { border-color: #ff7e5f; box-shadow: 0 0 20px rgba(255, 126, 95, 0.5); background: rgba(255, 126, 95, 0.15); }
+        .player-c.active-turn { border-color: #ffd700; box-shadow: 0 0 20px rgba(255, 215, 0, 0.5); background: rgba(255, 215, 0, 0.15); }
+
+        .turn-indicator {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            width: 28px;
+            height: 28px;
+            background: #4ecdc4;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba(78, 205, 196, 0.8);
+            animation: pulse-turn 1.5s infinite;
+        }
+        .turn-indicator.player-o { background: #ff7e5f; box-shadow: 0 0 10px rgba(255, 126, 95, 0.8); }
+        .turn-indicator.player-c { background: #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.8); }
+
+        @keyframes pulse-turn {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .player-icon {
+            font-size: 1.8rem;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.3);
+        }
+        .player-x .player-icon { color: #4ecdc4; border: 2px solid #4ecdc4; }
+        .player-o .player-icon { color: #ff7e5f; border: 2px solid #ff7e5f; }
+        .player-c .player-icon { color: #ffd700; border: 2px solid #ffd700; }
+
+        .player-probability { font-size: 1rem; font-weight: bold; }
+        .prob-x { color: #4ecdc4; }
+        .prob-o { color: #ff7e5f; }
+        .prob-c { color: #ffd700; }
+
+        .turn-message {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin: 10px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            position: relative;
+        }
+        .cell:hover { background: rgba(255, 255, 255, 0.15); transform: scale(1.05); }
+        .cell.x { color: #4ecdc4; border-color: #4ecdc4; }
+        .cell.o { color: #ff7e5f; border-color: #ff7e5f; }
+        .cell.c { color: #ffd700; border-color: #ffd700; }
+        
+        .cell.winner-cell {
+            animation: winner-glow 0.6s ease-in-out infinite alternate;
+            z-index: 2;
+        }
+        
+        @keyframes winner-glow {
+            from { box-shadow: 0 0 8px rgba(255, 255, 255, 0.6); transform: scale(1); }
+            to { box-shadow: 0 0 22px rgba(255, 215, 0, 0.9), 0 0 40px rgba(255, 165, 0, 0.5); transform: scale(1.08); }
+        }
+
+        .game-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .btn-primary { background: linear-gradient(90deg, #4ecdc4, #44a08d); border: none; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+
+        .game-type-selector, .game-mode-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 5px;
+        }
+
+        .selector-btn {
+            padding: 10px 24px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            color: #ccc;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+        .selector-btn.active {
+            background: rgba(255, 126, 95, 0.35);
+            border-color: #feb47b;
+            color: white;
+            box-shadow: 0 0 15px rgba(255, 126, 95, 0.3);
+        }
+        .selector-btn:hover { background: rgba(255,255,255,0.1); }
+
+        .toggle-arrow {
+            display: flex;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: #feb47b;
+            margin: 5px 0;
+            user-select: none;
+        }
+
+        .collapsible {
+            overflow: hidden;
+            transition: max-height 0.4s ease, opacity 0.3s;
+            max-height: 200px;
+            opacity: 1;
+        }
+        .collapsed { max-height: 0; opacity: 0; margin: 0; }
+
+        .round-selector {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+        }
+        .round-selector label { font-weight: bold; color: #feb47b; }
+        .round-selector input {
+            width: 70px;
+            padding: 8px;
+            border-radius: 6px;
+            border: 2px solid #feb47b;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            text-align: center;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .flip-wrapper {
+            position: relative;
+        }
+        .flip-btn {
+            position: absolute;
+            top: 15px; right: 15px;
+            z-index: 10;
+            background: #feb47b;
+            border: none;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            font-weight: bold;
+            cursor: pointer;
+            color: #1a1a2e;
+            font-size: 1.2rem;
+            transition: 0.3s;
+        }
+        .flip-btn:hover { transform: scale(1.1); }
+
+        .flip-container {
+            width: 100%;
+            min-height: 340px;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            position: relative;
+        }
+        .flipped { transform: rotateY(180deg); }
+
+        .flip-front, .flip-back {
+            position: absolute;
+            width: 100%; height: 100%;
+            backface-visibility: hidden;
+            border-radius: 15px;
+            padding: 25px;
+            background: rgba(0,0,0,0.5);
+            border: 1px solid rgba(255,255,255,0.15);
+            overflow-y: auto;
+        }
+        .flip-back { transform: rotateY(180deg); }
+
+        .rules-list { list-style: none; }
+        .rules-list li {
+            margin-bottom: 12px;
+            border-left: 3px solid #4ecdc4;
+            padding-left: 15px;
+        }
+        .highlight { color: #feb47b; font-weight: bold; }
+
+        .rating-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        .rating-table th {
+            background: rgba(254,180,123,0.2);
+            padding: 10px;
+            color: #feb47b;
+        }
+        .rating-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-weight: bold;
+        }
+
+        .combos-box {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .combos-box h3 {
+            color: #feb47b;
+            margin-bottom: 15px;
+            font-size: 1.4rem;
+        }
+        
+        .combo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        
+        .combo-item {
+            background: rgba(255,255,255,0.05);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .combo-name { color: #ddd; }
+        .combo-points { 
+            color: #ffd700; 
+            font-weight: bold;
+            margin-left: 10px;
+        }
+
+        .stats-box {
+            background: rgba(0,0,0,0.4);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 0;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2,1fr);
+            gap: 12px;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-value { font-size: 1.8rem; font-weight: bold; }
+
+        .result-message {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%) scale(0);
+            background: rgba(0,0,0,0.95);
+            padding: 35px;
+            border-radius: 20px;
+            z-index: 1000;
+            text-align: center;
+            border: 3px solid #4ecdc4;
+            transition: 0.4s;
+            max-width: 500px;
+            width: 90%;
+        }
+        .result-message.show { transform: translate(-50%,-50%) scale(1); }
+        .overlay {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 999;
+            display: none;
+        }
+        .overlay.show { display: block; }
+
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #a0a0c0;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content { flex-direction: column; }
+            .game-header { flex-direction: column; }
+            .combo-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1><i class="fas fa-dice"></i> Хаотичные крестики-нолики 4х4</h1>
+        <p class="tagline">Классическая игра, где непредсказуемость постоянна!</p>
+    </header>
+
+    <div class="game-type-selector">
+        <button class="selector-btn active" data-type="2p">👥 Человек (X) против Человека (O)</button>
+        <button class="selector-btn" data-type="3p">👥 Человек (X) против Человека (O) против Человека (C)</button>
+    </div>
+
+    <div class="toggle-arrow" id="mode-toggle-arrow">▼</div>
+    <div class="game-mode-selector collapsible" id="mode-selector">
+        <button class="selector-btn active" data-mode="normal">Обычная</button>
+        <button class="selector-btn" data-mode="endless">Рейтинг (Продолжительная)</button>
+    </div>
+
+    <div class="main-content">
+        <section class="game-section">
+            <div class="game-container">
+                <div class="game-header" id="players-container"></div>
+                <div class="turn-message" id="turn-message"></div>
+                <div class="game-board" id="game-board"></div>
+                <div class="game-controls">
+                    <button class="btn btn-primary" id="restart-btn"><i class="fas fa-redo"></i> Новая игра</button>
+                    <button class="btn" id="clear-stats-btn"><i class="fas fa-trash-alt"></i> Очистить статистику</button>
+                </div>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <div class="flip-wrapper">
+                <button class="flip-btn" id="flip-trigger" title="Повернуть">П</button>
+                <div class="flip-container" id="flip-box">
+                    <div class="flip-front">
+                        <h2 style="color:#feb47b; margin-bottom:15px;"><i class="fas fa-scroll"></i> Правила игры</h2>
+                        <ul class="rules-list">
+                            <li>Поле <span class="highlight">4×4</span>. Победа — <span class="highlight">3 в ряд</span>.</li>
+                            <li>Игроки: <span class="highlight">X (Крестики)</span>, <span class="highlight">O (Нолики)</span><span id="rule-c">, <span class="highlight" style="color:#ffd700;">C</span></span>.</li>
+                            <li>Вероятность своего знака: <span class="highlight">100% → 75% → 50% → 25%</span>.</li>
+                            <li>При неудаче шанс сбрасывается до <span class="highlight">100%</span>, ход сохраняется.</li>
+                            <li>В рейтинговом режиме раунд идёт до заполнения поля, затем подсчитываются очки за все комбинации.</li>
+                        </ul>
+                    </div>
+                    <div class="flip-back">
+                        <h2 style="color:#4ecdc4; margin-bottom:15px;"><i class="fas fa-trophy"></i> Рейтинг</h2>
+                        <table class="rating-table">
+                            <thead><tr><th>Игрок</th><th>Лучший счёт</th></tr></thead>
+                            <tbody id="rating-body"><tr><td colspan="2">Нет данных</td></tr></tbody>
+                        </table>
+                        <button class="btn" id="clear-rating-btn" style="width:100%; margin-top:15px;"><i class="fas fa-eraser"></i> Очистить рейтинг</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="combos-box">
+                <h3><i class="fas fa-cubes"></i> Комбинации и очки</h3>
+                <div class="combo-grid">
+                    <div class="combo-item"><span class="combo-name">3 в ряд (горизонталь)</span><span class="combo-points">+10</span></div>
+                    <div class="combo-item"><span class="combo-name">3 в ряд (вертикаль)</span><span class="combo-points">+10</span></div>
+                    <div class="combo-item"><span class="combo-name">3 в ряд (диагональ)</span><span class="combo-points">+15</span></div>
+                    <div class="combo-item"><span class="combo-name">4 в ряд</span><span class="combo-points">+35</span></div>
+                    <div class="combo-item"><span class="combo-name">T-образная (3+1)</span><span class="combo-points">+25</span></div>
+                    <div class="combo-item"><span class="combo-name">Угол (L-форма)</span><span class="combo-points">+20</span></div>
+                </div>
+            </div>
+
+            <div class="round-selector" id="round-selector-container" style="display: none;">
+                <label><i class="fas fa-list-ol"></i> Раундов:</label>
+                <input type="number" id="rounds-input" min="1" max="20" value="3">
+                <span style="color:#a0a0c0;">Осталось: <span id="rounds-left">3</span></span>
+            </div>
+
+            <div class="stats-box">
+                <h2 style="color:#4ecdc4; margin-bottom:15px;"><i class="fas fa-chart-bar"></i> Статистика побед</h2>
+                <div class="stats-grid">
+                    <div class="stat-item"><div class="stat-value" id="wins-x" style="color:#4ecdc4;">0</div>Побед X</div>
+                    <div class="stat-item"><div class="stat-value" id="wins-o" style="color:#ff7e5f;">0</div>Побед O</div>
+                    <div class="stat-item" id="wins-c-block" style="display:none;"><div class="stat-value" id="wins-c" style="color:#ffd700;">0</div>Побед C</div>
+                    <div class="stat-item"><div class="stat-value" id="total-games">0</div>Всего игр</div>
+                    <div class="stat-item"><div class="stat-value" id="total-draws">0</div>Ничьих</div>
+                </div>
+            </div>
+        </section>
+    </div>
+    <footer>Хаотичные крестики-нолики 4х4 | HTML, CSS, JavaScript</footer>
+</div>
+
+<div class="overlay" id="overlay"></div>
+<div class="result-message" id="result-message">
+    <h2 id="result-title"></h2>
+    <p id="result-text"></p>
+    <button class="btn btn-primary" id="close-result-btn">OK</button>
+</div>
+
+<script>
+    (function() {
+        const state = {
+            board: Array(16).fill(''),
+            players: ['X', 'O'],
+            currentPlayerIndex: 0,
+            probabilities: [100, 100, 100],
+            gameActive: true,
+            mode: 'normal',
+            totalRounds: 3,
+            currentRound: 1,
+            totalMatchScores: [],
+            stats: JSON.parse(localStorage.getItem('hk_n4_stats') || '{"X":0,"O":0,"C":0,"draws":0,"totalGames":0}'),
+            rating: JSON.parse(localStorage.getItem('hk_n4_rating') || '{}')
+        };
+
+        const boardEl = document.getElementById('game-board');
+        const playersContainer = document.getElementById('players-container');
+        const turnMsg = document.getElementById('turn-message');
+        const resultMessage = document.getElementById('result-message');
+        const overlay = document.getElementById('overlay');
+        const ratingBody = document.getElementById('rating-body');
+        const roundSelector = document.getElementById('round-selector-container');
+        const roundsInput = document.getElementById('rounds-input');
+        const roundsLeftSpan = document.getElementById('rounds-left');
+        const ruleC = document.getElementById('rule-c');
+        const winsCBlock = document.getElementById('wins-c-block');
+
+        const winLines3 = [
+            [0,1,2],[1,2,3],[4,5,6],[5,6,7],[8,9,10],[9,10,11],[12,13,14],[13,14,15],
+            [0,4,8],[4,8,12],[1,5,9],[5,9,13],[2,6,10],[6,10,14],[3,7,11],[7,11,15],
+            [0,5,10],[1,6,11],[4,9,14],[5,10,15],[2,5,8],[3,6,9],[6,9,12],[7,10,13]
+        ];
+        
+        const winLines4 = [
+            [0,1,2,3],[4,5,6,7],[8,9,10,11],[12,13,14,15],
+            [0,4,8,12],[1,5,9,13],[2,6,10,14],[3,7,11,15],
+            [0,5,10,15],[3,6,9,12]
+        ];
+
+        function updateUI() {
+            renderBoard();
+            renderPlayers();
+            updateStatsDisplay();
+            renderRating();
+            roundSelector.style.display = state.mode === 'endless' ? 'flex' : 'none';
+            ruleC.style.display = state.players.includes('C') ? 'inline' : 'none';
+            winsCBlock.style.display = state.players.includes('C') ? 'block' : 'none';
+            if (state.mode === 'endless') {
+                roundsLeftSpan.textContent = state.totalRounds - state.currentRound + 1;
+            }
+        }
+
+        function renderBoard() {
+            boardEl.innerHTML = '';
+            for (let i = 0; i < 16; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                cell.textContent = state.board[i];
+                if (state.board[i] === 'X') cell.classList.add('x');
+                if (state.board[i] === 'O') cell.classList.add('o');
+                if (state.board[i] === 'C') cell.classList.add('c');
+                cell.addEventListener('click', () => handleClick(i));
+                boardEl.appendChild(cell);
+            }
+        }
+
+        function renderPlayers() {
+            playersContainer.innerHTML = '';
+            state.players.forEach((s, i) => {
+                const cls = s==='X'?'player-x':s==='O'?'player-o':'player-c';
+                const active = i === state.currentPlayerIndex ? 'active-turn' : '';
+                const indCls = s==='X'?'':s==='O'?'player-o':'player-c';
+                const name = s==='X'?'Крестики':s==='O'?'Нолики':'Хаос';
+                playersContainer.innerHTML += `
+                    <div class="current-player ${cls} ${active}">
+                        <div class="turn-indicator ${indCls}" style="display:${i===state.currentPlayerIndex?'flex':'none'}">ХОД</div>
+                        <div class="player-icon">${s}</div>
+                        <div><strong>Игрок ${s} (${name})</strong><br><span class="prob-${s.toLowerCase()}">Вероятность: ${state.probabilities[i]}%</span></div>
+                    </div>`;
+            });
+            if (state.gameActive) {
+                const sym = state.players[state.currentPlayerIndex];
+                const color = sym==='X'?'#4ecdc4':sym==='O'?'#ff7e5f':'#ffd700';
+                turnMsg.innerHTML = `<i class="fas fa-arrow-right"></i> Сейчас ходит: <span style="color:${color}">Игрок ${sym}</span>`;
+            }
+        }
+
+        function handleClick(index) {
+            if (!state.gameActive || state.board[index] !== '') return;
+            const sym = state.players[state.currentPlayerIndex];
+            const prob = state.probabilities[state.currentPlayerIndex];
+            const roll = Math.random() * 100 <= prob;
+            const others = state.players.filter(s => s !== sym);
+            const placed = roll ? sym : others[Math.floor(Math.random() * others.length)];
+            state.board[index] = placed;
+
+            if (roll) {
+                const newProb = prob === 100 ? 75 : prob === 75 ? 50 : prob === 50 ? 25 : 25;
+                state.probabilities[state.currentPlayerIndex] = newProb;
+                state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+            } else {
+                state.probabilities[state.currentPlayerIndex] = 100;
+            }
+            
+            renderBoard();
+            renderPlayers();
+            
+            if (state.mode === 'endless') {
+                if (!state.board.includes('')) {
+                    processEndlessRound();
+                }
+            } else {
+                checkNormalWinner();
+            }
+        }
+
+        function checkNormalWinner() {
+            for (const line of winLines3) {
+                const [a,b,c] = line;
+                if (state.board[a] && state.board[a] === state.board[b] && state.board[a] === state.board[c]) {
+                    line.forEach(i => document.querySelector(`.cell[data-index="${i}"]`)?.classList.add('winner-cell'));
+                    endGame(state.board[a]);
+                    return;
+                }
+            }
+            if (!state.board.includes('')) {
+                endGame('draw');
+            }
+        }
+
+        function processEndlessRound() {
+            state.gameActive = false;
+            turnMsg.innerHTML = '<i class="fas fa-calculator"></i> <span style="color:#feb47b;">Подсчёт комбинаций...</span>';
+            
+            const allCombos = findAllCombos();
+            
+            highlightCombosStepByStep(allCombos, () => {
+                const roundScoreMap = {};
+                state.players.forEach(p => roundScoreMap[p] = 0);
+                
+                allCombos.forEach(combo => {
+                    roundScoreMap[combo.winner] = (roundScoreMap[combo.winner] || 0) + combo.points;
+                });
+                
+                state.players.forEach((p, i) => {
+                    state.totalMatchScores[i] = (state.totalMatchScores[i] || 0) + (roundScoreMap[p] || 0);
+                });
+                
+                state.players.forEach((p, i) => {
+                    const score = state.totalMatchScores[i] || 0;
+                    if (!state.rating[p] || score > state.rating[p]) {
+                        state.rating[p] = score;
+                    }
+                });
+                localStorage.setItem('hk_n4_rating', JSON.stringify(state.rating));
+                renderRating();
+                
+                const scoresText = state.players.map(p => `${p}: +${roundScoreMap[p] || 0}`).join(', ');
+                const totalText = state.players.map((p, i) => `${p}: ${state.totalMatchScores[i] || 0}`).join(', ');
+                showRoundResult(scoresText, totalText);
+                
+                setTimeout(() => {
+                    if (state.currentRound >= state.totalRounds) {
+                        finishEndlessMatch();
+                    } else {
+                        state.currentRound++;
+                        startNewRound();
+                    }
+                }, 2500);
+            });
+        }
+
+        function findAllCombos() {
+            const foundCombos = [];
+            const usedCells = new Set();
+            
+            for (const line of winLines4) {
+                if (line.every(i => state.board[i] && state.board[i] === state.board[line[0]])) {
+                    if (!line.some(i => usedCells.has(i))) {
+                        foundCombos.push({ winner: state.board[line[0]], cells: [...line], points: 35 });
+                        line.forEach(i => usedCells.add(i));
+                    }
+                }
+            }
+            
+            for (const line of winLines3) {
+                if (line.every(i => state.board[i] && state.board[i] === state.board[line[0]])) {
+                    if (!line.some(i => usedCells.has(i))) {
+                        let points = 10;
+                        if ([0,5,10].every((v,i)=>v===line[i]) || [1,6,11].every((v,i)=>v===line[i]) ||
+                            [4,9,14].every((v,i)=>v===line[i]) || [5,10,15].every((v,i)=>v===line[i]) ||
+                            [2,5,8].every((v,i)=>v===line[i]) || [3,6,9].every((v,i)=>v===line[i]) ||
+                            [6,9,12].every((v,i)=>v===line[i]) || [7,10,13].every((v,i)=>v===line[i])) {
+                            points = 15;
+                        }
+                        foundCombos.push({ winner: state.board[line[0]], cells: [...line], points });
+                        line.forEach(i => usedCells.add(i));
+                    }
+                }
+            }
+            
+            return foundCombos;
+        }
+
+        function highlightCombosStepByStep(combos, callback) {
+            if (combos.length === 0) {
+                callback();
+                return;
+            }
+            
+            let index = 0;
+            
+            function highlightNext() {
+                if (index >= combos.length) {
+                    setTimeout(callback, 800);
+                    return;
+                }
+                
+                const combo = combos[index];
+                combo.cells.forEach(i => {
+                    const cell = document.querySelector(`.cell[data-index="${i}"]`);
+                    if (cell) cell.classList.add('winner-cell');
+                });
+                
+                index++;
+                setTimeout(highlightNext, 600);
+            }
+            
+            highlightNext();
+        }
+
+        function showRoundResult(scoresText, totalText) {
+            const msg = document.createElement('div');
+            msg.style.cssText = `
+                position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+                background: rgba(0,0,0,0.95); padding: 15px 25px; border-radius: 12px;
+                z-index: 1001; border: 2px solid #feb47b; font-weight: bold;
+                animation: fadeIn 0.4s ease; text-align: center;
+            `;
+            msg.innerHTML = `
+                🏆 Раунд ${state.currentRound}/${state.totalRounds} завершён!<br>
+                <span style="color:#ffd700;">Очки за раунд: ${scoresText}</span><br>
+                <span style="color:#4ecdc4;">Общий счёт: ${totalText}</span>
+            `;
+            document.body.appendChild(msg);
+            setTimeout(() => msg.remove(), 3500);
+        }
+
+        function startNewRound() {
+            state.board = Array(16).fill('');
+            state.probabilities = [100, 100, 100];
+            state.currentPlayerIndex = 0;
+            state.gameActive = true;
+            roundsLeftSpan.textContent = state.totalRounds - state.currentRound + 1;
+            renderBoard();
+            renderPlayers();
+        }
+
+        function finishEndlessMatch() {
+            state.gameActive = false;
+            const scores = state.totalMatchScores;
+            const maxScore = Math.max(...scores, 0);
+            const winners = state.players.filter((_, i) => (scores[i] || 0) === maxScore);
+            
+            state.stats.totalGames = (state.stats.totalGames || 0) + 1;
+            if (winners.length === 1) {
+                state.stats[winners[0]] = (state.stats[winners[0]] || 0) + 1;
+            } else {
+                state.stats.draws = (state.stats.draws || 0) + 1;
+            }
+            localStorage.setItem('hk_n4_stats', JSON.stringify(state.stats));
+            updateStatsDisplay();
+
+            const title = winners.length === 1 ? `🥇 Победил игрок ${winners[0]}!` : '🤝 Ничья!';
+            const text = winners.length === 1 
+                ? `Игрок ${winners[0]} набрал ${maxScore} очков и выиграл матч из ${state.totalRounds} раундов!`
+                : `Несколько игроков набрали по ${maxScore} очков. Ничья!`;
+            showResult(title, text);
+        }
+
+        function endGame(winner) {
+            state.gameActive = false;
+            state.stats.totalGames = (state.stats.totalGames || 0) + 1;
+            if (winner === 'draw') {
+                state.stats.draws = (state.stats.draws || 0) + 1;
+            } else {
+                state.stats[winner] = (state.stats[winner] || 0) + 1;
+            }
+            localStorage.setItem('hk_n4_stats', JSON.stringify(state.stats));
+            updateStatsDisplay();
+            const title = winner === 'draw' ? 'Ничья!' : `Победил ${winner}!`;
+            const text = winner === 'draw' ? 'Нет победителя.' : `Игрок ${winner} выиграл!`;
+            showResult(title, text);
+        }
+
+        function showResult(title, text) {
+            document.getElementById('result-title').textContent = title;
+            document.getElementById('result-text').textContent = text;
+            overlay.classList.add('show');
+            resultMessage.classList.add('show');
+        }
+
+        function newGame() {
+            state.board = Array(16).fill('');
+            state.probabilities = [100, 100, 100];
+            state.currentPlayerIndex = 0;
+            state.gameActive = true;
+            state.currentRound = 1;
+            state.totalMatchScores = new Array(state.players.length).fill(0);
+            roundsLeftSpan.textContent = state.totalRounds;
+            overlay.classList.remove('show');
+            resultMessage.classList.remove('show');
+            updateUI();
+        }
+
+        function renderRating() {
+            const entries = Object.entries(state.rating).sort((a,b) => b[1]-a[1]);
+            ratingBody.innerHTML = entries.length ? entries.map(([s,sc]) => 
+                `<tr><td style="color:${s==='X'?'#4ecdc4':s==='O'?'#ff7e5f':'#ffd700'}">${s}</td><td>${sc}</td></tr>`
+            ).join('') : '<tr><td colspan="2">Нет данных</td></tr>';
+        }
+
+        function updateStatsDisplay() {
+            document.getElementById('wins-x').textContent = state.stats.X || 0;
+            document.getElementById('wins-o').textContent = state.stats.O || 0;
+            document.getElementById('wins-c').textContent = state.stats.C || 0;
+            document.getElementById('total-games').textContent = state.stats.totalGames || 0;
+            document.getElementById('total-draws').textContent = state.stats.draws || 0;
+        }
+
+        document.querySelectorAll('.selector-btn[data-type]').forEach(b => {
+            b.addEventListener('click', function() {
+                document.querySelectorAll('.selector-btn[data-type]').forEach(x => x.classList.remove('active'));
+                this.classList.add('active');
+                state.players = this.dataset.type === '3p' ? ['X','O','C'] : ['X','O'];
+                newGame();
+            });
+        });
+        document.querySelectorAll('.selector-btn[data-mode]').forEach(b => {
+            b.addEventListener('click', function() {
+                document.querySelectorAll('.selector-btn[data-mode]').forEach(x => x.classList.remove('active'));
+                this.classList.add('active');
+                state.mode = this.dataset.mode;
+                newGame();
+            });
+        });
+        document.getElementById('mode-toggle-arrow').addEventListener('click', function() {
+            const el = document.getElementById('mode-selector');
+            el.classList.toggle('collapsed');
+            this.textContent = el.classList.contains('collapsed') ? '▶' : '▼';
+        });
+        document.getElementById('flip-trigger').addEventListener('click', () => {
+            document.getElementById('flip-box').classList.toggle('flipped');
+        });
+        document.getElementById('restart-btn').addEventListener('click', newGame);
+        document.getElementById('close-result-btn').addEventListener('click', newGame);
+        document.getElementById('clear-stats-btn').addEventListener('click', () => {
+            if (confirm('Очистить статистику побед?')) {
+                state.stats = {X:0,O:0,C:0,draws:0,totalGames:0};
+                localStorage.setItem('hk_n4_stats', JSON.stringify(state.stats));
+                updateStatsDisplay();
+            }
+        });
+        document.getElementById('clear-rating-btn').addEventListener('click', () => {
+            if (confirm('Очистить рейтинг?')) {
+                state.rating = {};
+                localStorage.removeItem('hk_n4_rating');
+                renderRating();
+            }
+        });
+        roundsInput.addEventListener('change', function() {
+            let val = parseInt(this.value) || 3;
+            if (val < 1) val = 1;
+            if (val > 20) val = 20;
+            state.totalRounds = val;
+            this.value = val;
+            if (state.mode === 'endless') newGame();
+        });
+        overlay.addEventListener('click', () => {
+            overlay.classList.remove('show');
+            resultMessage.classList.remove('show');
+        });
+
+        updateUI();
+        renderRating();
+    })();
+</script>
+</body>
+</html>
